@@ -1,0 +1,10 @@
+{%extends"Layout.html"%}
+
+{%block body%}
+</br>
+    {%if session['logged_in']==True%}
+        <h3>Welcome {{username}}</h3>
+    {%else%}
+        <h3>Please Login</h3>
+    {%endif%}
+{%endblock%}

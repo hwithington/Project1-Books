@@ -1,0 +1,19 @@
+ #navBar {
+	position: absolute;
+	right: 0;
+	top: 0;
+	left: 0;
+	text-align: center;
+	background: #333;
+	color: #818181;
+	font-weight: bolder;
+	max-height: 80px;
+	min-height: 80px;
+	min-width: 800px;
+	border:#333;
+ }
+
+
+ #mainBody {
+
+ }
