@@ -1,34 +1,43 @@
 {%extends"Layout.html"%}
 {%block body%}
 <br/>
-    <h3>Sign up to Review and Submit Book Reviews</h3>
-<br/>
-<div>
-    <form method="POST">
-        <div class="form-group row">
-            <label class="col-sm-1 col-form-label">Username</label>
-            <div class="col-md-6">
-                <input type="text" name="username" class="form-control" placeholder="Please Enter Username">
-            </div>
+<div class="jumbotron jumbotron-fluid">
+    <div class="container">
+        <h3>Sign up to Review and Submit Book Reviews</h3>
+        <br/>
+        <div>
+            <form method="POST">
+                <div class="form-group row">
+                    <label for="username" class="col-sm-1 col-form-label">Username</label>
+                    <div class="col-md-6">
+                        <input id="username" type="text" name="username" class="form-control" placeholder="Enter Username">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="email" class="col-sm-1 col-form-label">Email</label>
+                    <div class="col-md-6">
+                        <input id="email" type="text" name="email" class="form-control" placeholder="Enter Email">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="password" class="col-sm-1 col-form-label">Password</label>
+                    <div class="col-md-6">
+                        <input id="password" type="password" name="password" class="form-control" placeholder="Enter Password">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="confirm_password" class="col-sm-1 col-form-label">Confirm Password</label>
+                    <div class="col-md-6">
+                        <input id="confirm_password" type="password" class="form-control" name="confirm" placeholder="ReEnter Password">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-10">
+                        <button type="submit" class="btn btn-primary">Submit for Approval</button>
+                    </div>
+                </div>
+            </form>
         </div>
-        <div class="form-group row">
-            <label class="col-sm-1 col-form-label">Password</label>
-            <div class="col-md-6">
-                <input type="password" name="password" class="form-control" placeholder="Please Enter Password">
-            </div>
-        </div>
-        <div class="form-group row">
-            <label class="col-sm-1 col-form-label">Email</label>
-            <div class="col-md-6">
-                <input type="text" name="email" class="form-control" placeholder="Please Enter Email">
-            </div>
-        </div>
-        <div class="form-group row">
-            <div class="col-md-10">
-                <button type="submit" class="btn btn-primary">Submit for Approval</button>
-            </div>
-        </div>
-    </form>
+    </div>
 </div>
-
 {%endblock%}

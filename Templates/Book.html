@@ -1,5 +1,64 @@
 {%extends"Layout.html"%}
 {%block body%}
-    <h3>BOOK PAGE</h3>
+<br/>
+    <div class="content col-lg-12">
+        {%if response and books%}
+        <div class="jumbotron">
+            <div class="detail_content">
+                <div class="detail_image">
+                    <img id="{{books.isbn}}" src="static/Images/imagenotavailable.png" alt="cover not available">
+                </div>
+                <br/>
+                <div class="detail_info">
+                        <h2 class="card-title">{{books.title}}</h2>
+                        <h4 class="isbn">ISBN No: {{books.isbn}}</h4>
+                        <h4 class="rating">Good Reads Rating: {{response['books'][0]['average_rating']}}</h4>
+                </div>
+            </div>
+            <br/>
+            <div class="detail_desc">
+            <h1>Description</h1>
+                <p class="card_text" id ="{{books.id}}">Cannot find description</p>
+            </div>
+            <br/>
+            <div>
+                <form method="POST">
+                    <div>
+                        <label for="rating">Post your rating here 1-5</label>
+                        <textarea class="form-control" id="rating" name="rating" rows="1"></textarea>
+                    </div>
+                    <div>
+                        <label for="review">Post your review here</label>
+                        <textarea class="form-control" id="review" name="review" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+        <script>
+                var MY_KEY=config.BOOK_API_KEY
+                $(document).ready(function(){
+                        var isbn ="{{books.isbn}}"
+                            $.ajax({
+                                dataType: 'json',
+                                url: 'https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn+"&key="+MY_KEY,
+                                success: handleResponse
+
+                                });
+                            function handleResponse( response ) {
+                            $.each( response.items, function( i, item ) {
+                                thumb = item.volumeInfo.imageLinks.thumbnail;
+                                description=item.volumeInfo.description;
+                                $('#{{books.isbn}}').attr('src', thumb);
+                                $('#{{books.id}}').text(description)
+                            });
+                          }
+                    })
+        </script>
+        {%else%}
+          <h1> No such book</h1>
+
+        {%endif%}
+    </div>
 
 {%endblock%}

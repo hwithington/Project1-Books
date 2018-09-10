@@ -1,16 +1,17 @@
 import os
 
-from flask import Flask, render_template, request, session, flash, redirect, url_for
+from flask import Flask, render_template, request, session, flash, redirect, url_for, jsonify
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from functools import wraps
+import requests
+import json
+from datetime import datetime
+from config import DATABASE_URL,BOOK_READ_API_KEY
 
 app = Flask(__name__)
 
-# Check for environment variable
-if not os.getenv("DATABASE_URL"):
-    raise RuntimeError("DATABASE_URL is not set")
 
 # Configure session to use filesystem
 app.config["SESSION_PERMANENT"] = False
@@ -18,14 +19,14 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Set up database
-engine = create_engine(os.getenv("DATABASE_URL"))
+engine = create_engine(DATABASE_URL)
 db = scoped_session(sessionmaker(bind=engine))
 
 def login_required(f):
     @wraps(f)
     def decorated_function(*args,**kwargs):
         if 'logged_in' not in session:
-            flash("You need to login first")
+            flash("Please Login or Signup to view website")
             return redirect(url_for('login'))
         return f(*args,**kwargs)
 
@@ -68,47 +69,87 @@ def logout():
 
 @app.route("/registration",methods=['GET','POST'])
 def registration():
+    error = ""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        confirm = request.form['confirm']
         email = request.form['email']
-        error = ""
 
-        if username is None or password is None or email is None:
+        if username is None or username=="" or password is None or password=="" or email is None or email=="":
             print("error")
-            error = "Please fill all the fields"
+            error = "Please fill all the fields."
+        elif password!=confirm:
+            print("error")
+            error = "Password did not match!"
         else:
             db.execute("INSERT INTO public.users (username,password,email,regdate,active_status) VALUES(:username,:password,:email,DEFAULT,FALSE)",
-                       {"username": username, "password": password, "email": email})
+                       {"username": username,"password": password,"email": email})
             db.commit()
             flash("Successfully Registered")
             return redirect(url_for("login"))
 
-    return render_template("Registration.html")
+    return render_template('Registration.html',error=error)
 
-@app.route("/search")
+@app.route("/search",methods=['GET'])
 @login_required
 def search():
     username = session['user_name']
-    return render_template("Search.html",username=username)
+    val = request.args.get('search')
+    if val:
+        books = db.execute("SELECT * FROM public.books WHERE lower(isbn) LIKE lower(:isbn) or lower(title) LIKE lower(:title)",
+                           {'isbn': "%" + val + "%", 'title': "%" + val + "%"})
+    else:
+        books = db.execute("SELECT * FROM public.books LIMIT 12")
 
-@app.route("/result")
-@login_required
-def result():
-    username = session['user_name']
-    return render_template("Result.html",username=username)
-
-@app.route("/book")
-@login_required
-def book():
-    username = session['user_name']
-    return render_template("Book.html",username=username)
+    return render_template("Search.html",username=username, books=books)
 
 @app.route("/reviews")
 @login_required
 def reviews():
     username = session['user_name']
     return render_template("Reviews.html",username=username)
+
+@app.route("/books/<string:isbn>",methods=['GET','POST'])
+@login_required
+def book(isbn):
+    username = session['user_name']
+    error=""
+    user_id=session["user_id"]
+    books=db.execute("SELECT * FROM public.books WHERE isbn=:isbn",{'isbn':isbn}).fetchone()
+    book_id=books.id
+    reviews=db.execute("SELECT * FROM public.reviews WHERE bookid=:bookid and userid=:userid",{"bookid":book_id,"userid":user_id})
+    if request.method=='GET':
+        res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": BOOK_READ_API_KEY, "isbns": isbn})
+        return render_template('Book.html',response=res.json(),books=books)
+    else:
+        reviewtext=request.form['review']
+        rating=request.form['rating']
+        try:
+            review_exist=db.execute("SELECT * FROM public.reviews WHERE userid=:userid and bookid=:bookid",{"userid":user_id,"bookid":book_id}).fetchone()
+            if review_exist:
+                error="You have already reviewed this book!"
+            else:
+                print("INSERTING REVIEW FOR BOOK ID : {}, USER_ID : {}, RATING : {}, REVIEW : {}, REVIEW_DATE : {}".format(book_id,user_id,rating,reviewtext,datetime.now().date()))
+                db.execute("INSERT INTO public.reviews (userid,bookid,rating,review,review_date) VALUES(:user_id,:book_id,:rating,:review_text,:review_date)",{"user_id":user_id,"book_id":book_id,"rating":rating,"review_text":reviewtext,"review_date":datetime.now().date()})
+                print("INSERTED")
+                db.commit()
+                flash("REVIEW COMMITTED!")
+        except:
+            error="INSERT ERROR"
+        return render_template('Book.html', username=username, error=error, books=books)
+
+@app.route("/api/<string:isbn>")
+@login_required
+def book_api(isbn):
+    username = session['user_name']
+    books=db.execute("SELECT * FROM public.books WHERE isbn=:isbn",{'isbn':isbn}).fetchone()
+    books_json={}
+    books_json=books
+    if books:
+        return jsonify(books_json)
+    else:
+        return render_template('404.html',username=username)
 
 if __name__ == "__main__":
     app.run()
