@@ -1,0 +1,6 @@
+Flask
+Flask_session
+SQLAlchemy
+psycopg2
+requests
+datetime
