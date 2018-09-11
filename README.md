@@ -1,5 +1,5 @@
 # Project1-Books
-###Required Libraries
+Required Libraries
 
 - See requirements.txt file for libraries to install.
 - To install libraries:
