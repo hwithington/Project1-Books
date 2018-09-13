@@ -1,0 +1,31 @@
+{%extends"Layout.html"%}
+{%block body%}
+<header class="global-navigation" style="padding: 20px;">
+        <nav class="navbar navbar-dark bg-faded justify-content-center">
+            <form class="form-inline search" method="GET" action="{{url_for('search')}}">
+                  <input class="form-control mr-sm-2" type="text" placeholder="Search" name="search">
+                  <button class="btn btn-success my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </nav>
+</header>
+<div class="content">
+    {%if books%}
+
+    <div class="card-columns text-center">
+        {%for book in books%}
+            <div class="card border border-secondary" style="width: 25rem;margin: 20px;">
+                <div class="card-header">
+                    <img id="{{book.isbn}}" src="{{book_details(book.isbn)['items'][0]['volumeInfo']['imageLinks']['smallThumbnail']}}" alt="cover not available"/>
+                </div>
+                    <div class="card-body">
+                        <h4 class="card-title">{{book.title}}</h4>
+                        <h4 class="isbn">ISBN No: {{book.isbn}}</h4>
+                        <p class="card-text" id="{{book.id}}">{{book_details(book.isbn)['items'][0]['searchInfo']['textSnippet']}}</p>
+                        <a href="{{url_for('book',isbn=book.isbn)}}" class="btn btn-primary">Read More</a>
+                    </div>
+            </div>
+        {%endfor%}
+    </div>
+    {%endif%}
+</div>
+{%endblock%}

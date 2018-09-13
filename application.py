@@ -1,4 +1,4 @@
-import os
+# import os
 
 from flask import Flask, render_template, request, session, flash, redirect, url_for, jsonify
 from flask_session import Session
@@ -6,9 +6,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from functools import wraps
 import requests
-import json
+# import json
 from datetime import datetime
-from config import DATABASE_URL,BOOK_READ_API_KEY
+from config import DATABASE_URL,BOOK_READ_API_KEY,BOOK_API_KEY
 
 app = Flask(__name__)
 
@@ -32,6 +32,13 @@ def login_required(f):
 
     return decorated_function
 
+@app.context_processor
+def book_processor():
+    def book_details(isbn):
+        dec = requests.get("https://www.googleapis.com/books/v1/volumes", params={"q": isbn, "key": BOOK_API_KEY})
+        return dec.json()
+    return dict(book_details=book_details)
+
 @app.route("/", methods=["GET","POST"])
 @login_required
 def homepage():
@@ -44,7 +51,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user = db.execute("SELECT * FROM public.users WHERE username=:username and password=:password",
+        user = db.execute("SELECT * FROM users WHERE username=:username and password=:password",
                           {"username": username, "password": password}).fetchone()
 
         if user is None or username!=user.username or password!=user.password:
@@ -83,7 +90,7 @@ def registration():
             print("error")
             error = "Password did not match!"
         else:
-            db.execute("INSERT INTO public.users (username,password,email,regdate,active_status) VALUES(:username,:password,:email,DEFAULT,FALSE)",
+            db.execute("INSERT INTO users (username,password,email,regdate,active_status) VALUES(:username,:password,:email,DEFAULT,FALSE)",
                        {"username": username,"password": password,"email": email})
             db.commit()
             flash("Successfully Registered")
@@ -97,59 +104,67 @@ def search():
     username = session['user_name']
     val = request.args.get('search')
     if val:
-        books = db.execute("SELECT * FROM public.books WHERE lower(isbn) LIKE lower(:isbn) or lower(title) LIKE lower(:title)",
+        books = db.execute("SELECT * FROM books WHERE lower(isbn) LIKE lower(:isbn) or lower(title) LIKE lower(:title)",
                            {'isbn': "%" + val + "%", 'title': "%" + val + "%"})
     else:
         books = db.execute("SELECT * FROM public.books LIMIT 12")
 
-    return render_template("Search.html",username=username, books=books)
+    return render_template("Search.html", username=username, books=books)
 
 @app.route("/reviews")
 @login_required
 def reviews():
     username = session['user_name']
-    return render_template("Reviews.html",username=username)
+    user_id = session['user_id']
+    if request.method == 'GET':
+        user_reviews = db.execute("SELECT * FROM reviews WHERE userid=:userid ORDER BY review_date desc",{"userid":user_id}).fetchall()
+        return render_template("Reviews.html", username=username, reviews=user_reviews)
 
-@app.route("/books/<string:isbn>",methods=['GET','POST'])
+@app.route("/books/<string:isbn>", methods=['GET','POST'])
 @login_required
 def book(isbn):
     username = session['user_name']
-    error=""
-    user_id=session["user_id"]
-    books=db.execute("SELECT * FROM public.books WHERE isbn=:isbn",{'isbn':isbn}).fetchone()
-    book_id=books.id
-    reviews=db.execute("SELECT * FROM public.reviews WHERE bookid=:bookid and userid=:userid",{"bookid":book_id,"userid":user_id})
-    if request.method=='GET':
+    error = ""
+    user_id = session['user_id']
+    book = db.execute("SELECT * FROM books WHERE isbn=:isbn",{'isbn':isbn}).fetchone()
+    book_id = book.id
+    if request.method == 'GET':
         res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": BOOK_READ_API_KEY, "isbns": isbn})
-        return render_template('Book.html',response=res.json(),books=books)
+        return render_template('Book.html', username=username, response=res.json(), book=book)
     else:
-        reviewtext=request.form['review']
-        rating=request.form['rating']
+        review_text = request.form['review']
+        rating = request.form['rating']
         try:
-            review_exist=db.execute("SELECT * FROM public.reviews WHERE userid=:userid and bookid=:bookid",{"userid":user_id,"bookid":book_id}).fetchone()
+            review_exist = db.execute("SELECT * FROM reviews WHERE userid=:userid and bookid=:bookid",{"userid":user_id,"bookid":book_id}).fetchone()
             if review_exist:
-                error="You have already reviewed this book!"
+                error = "You have already reviewed this book!"
             else:
-                print("INSERTING REVIEW FOR BOOK ID : {}, USER_ID : {}, RATING : {}, REVIEW : {}, REVIEW_DATE : {}".format(book_id,user_id,rating,reviewtext,datetime.now().date()))
-                db.execute("INSERT INTO public.reviews (userid,bookid,rating,review,review_date) VALUES(:user_id,:book_id,:rating,:review_text,:review_date)",{"user_id":user_id,"book_id":book_id,"rating":rating,"review_text":reviewtext,"review_date":datetime.now().date()})
+                print("INSERTING REVIEW FOR BOOK ID : {}, USER_ID : {}, RATING : {}, REVIEW : {}, REVIEW_DATE : {}".format(book_id,user_id,rating,review_text,datetime.now().date()))
+                db.execute("INSERT INTO reviews (userid,bookid,rating,review,review_date)VALUES(:user_id,:book_id,:rating,:review_text,:review_date)",{"user_id":user_id,"book_id":book_id,"rating":rating,"review_text":review_text,"review_date":datetime.now().date()})
                 print("INSERTED")
                 db.commit()
                 flash("REVIEW COMMITTED!")
+                return redirect(url_for('reviews'))
         except:
             error="INSERT ERROR"
-        return render_template('Book.html', username=username, error=error, books=books)
+        return render_template('Book.html', username=username, error=error, book=book)
 
 @app.route("/api/<string:isbn>")
 @login_required
 def book_api(isbn):
-    username = session['user_name']
-    books=db.execute("SELECT * FROM public.books WHERE isbn=:isbn",{'isbn':isbn}).fetchone()
-    books_json={}
-    books_json=books
-    if books:
-        return jsonify(books_json)
+    book_item = db.execute("SELECT * FROM books WHERE isbn=:isbn",{'isbn':isbn}).fetchone()
+    book_id = book_item.id
+    book_json = {}
+    if book:
+        book_json = {"title": book_item.title, "author": book_item.author, "year": book_item.year, "isbn": book_item.isbn}
+        rev_count = dict(
+            db.execute("SELECT COUNT(*) FROM Reviews WHERE bookid=:bookid",{"bookid":book_id}).fetchone())
+        avg_score = dict(
+            db.execute("SELECT AVG(rating) FROM reviews WHERE bookid=:bookid", {"bookid": book_id}).fetchone())
+        book_json.update(review_count = rev_count['count'], average_score = avg_score['avg'])
+        return jsonify(book_json)
     else:
-        return render_template('404.html',username=username)
+        return render_template('404.html')
 
 if __name__ == "__main__":
     app.run()

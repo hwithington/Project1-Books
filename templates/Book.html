@@ -1,0 +1,48 @@
+{%extends"Layout.html"%}
+{%block body%}
+<br/>
+    {% if response and book %}
+    <div class="content col-lg-12">
+        <div class="jumbotron border border-secondary">
+            <div class="detail_content" >
+                <div class="detail_image">
+                    <img id="{{book.isbn}}" src="{{book_details(book.isbn)['items'][0]['volumeInfo']['imageLinks']['thumbnail']}}" alt="cover not available">
+                </div>
+                <br/>
+                <div class="detail_info">
+                    <h2 class="card-title"><strong>{{book.title}}</strong></h2>
+                    <h6>Subtitle: {{book_details(book.isbn)['items'][0]['volumeInfo']['subtitle']}}</h6>
+                    <h6>Author: {{book_details(book.isbn)['items'][0]['volumeInfo']['authors'][0]}}</h6>
+                    <h6 class="isbn">ISBN No: {{book.isbn}}</h6>
+                    <h5 class="rating">Good Reads Rating: {{response['books'][0]['average_rating']}} out of 5</h5>
+                </div>
+            </div>
+            <br/>
+            <div class="detail_desc">
+                <h2>Description</h2>
+                <p class="card_text" id="{{book.id}}">{{book_details(book.isbn)['items'][0]['volumeInfo']['description']}}</p>
+            </div>
+            <br/>
+            <div>
+                <form method="POST">
+                    <div>
+                        <div class="form-group row">
+                            <label for="rating" class="col-1 col-form-label">Rating:</label>
+                            <div class="col-3">
+                                <input type="text" id="rating" name="rating" class="form-control" placeholder="Enter Your Rating from 1-5">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="review">Post your review here:</label>
+                        <textarea class="form-control" id="review" name="review" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+        {%else%}
+          <h1> No such book</h1>
+    </div>
+{%endif%}
+{%endblock%}

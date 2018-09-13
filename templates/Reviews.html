@@ -1,0 +1,28 @@
+{%extends"Layout.html"%}
+{%block body%}
+<div class="content">
+    {%if reviews|count > 0%}
+
+    <div class="card-columns text-center">
+        {%for review in reviews%}
+            <div class="card border border-secondary" style="width: 25rem;margin: 20px;">
+                    <div class="card-body">
+                        <p class="card-text"><strong>REVIEW:</strong> {{review.review}}</p>
+                        <p>
+                            <h8><strong>Rating:</strong> {{review.rating}}</h8></br>
+                            <h8><strong>Date:</strong> {{review.review_date}}</h8>
+                        </p>
+                    </div>
+            </div>
+        {%endfor%}
+    </div>
+    {%else%}
+    <div class="content col-lg-12">
+        <div class="jumbotron border border-secondary">
+            <h1>You Have Made No Book Reviews!</h1>
+        </div>
+    </div>
+
+    {%endif%}
+</div>
+{%endblock%}
