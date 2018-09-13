@@ -1,8 +1,9 @@
-#for postgre url
-DATABASE_URL=""
+# for postgres url
+DATABASE_URL = ""
 
 
-#bookread API Key
-BOOK_READ_API_KEY=""
+# Good read API Key
+BOOK_READ_API_KEY = ""
 
-BOOK_API_KEY=""
+# Google Books API Key
+BOOK_API_KEY = ""
