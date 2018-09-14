@@ -9,7 +9,10 @@
     <div style="padding-top: 20px;">
         <h1><strong>New Top Rated Book</strong></h1>
     </div>
-    <div class="card border border-secondary" style="width: 25rem;margin: 20px;">
+    <div class="card border border-secondary text-center" style="width: 25rem;margin: 20px;">
+        <div class="card-header" style="height:15rem;justify-content:center;">
+            <img class="center-block" id="{{book.isbn}}" src="{{book_details(book.isbn)['thumbnail']}}" alt="cover not available"/>
+        </div>
         <div class="card-body">
             <h4 class="card-title">{{book.title}}</h4>
             <h4 class="isbn">ISBN No: {{book.isbn}}</h4>
