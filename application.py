@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from functools import wraps
 import requests
-# import json
+import json
 from datetime import datetime
 from config import DATABASE_URL, BOOK_READ_API_KEY, BOOK_API_KEY
 
@@ -37,16 +37,45 @@ def login_required(f):
 def book_processor():
     def book_details(isbn):
         dec = requests.get("https://www.googleapis.com/books/v1/volumes", params={"q": isbn, "key": BOOK_API_KEY})
-        return dec.json()
+        data_json = dec.json()
+        if 'error' in data_json:
+            data = {'thumbnail': "/static/images/imagenotavailable.png",
+                    'smallthumbnail': "/static/images/imagenotavailable.png",
+                    'description': "Description Currently Not Available...",
+                    'textsnippet': "Description Currently Not Available...",
+                    'author': ""
+                    }
+        else:
+            data = {'thumbnail': data_json['items'][0]['volumeInfo']['imageLinks']['thumbnail'],
+                    'smallthumbnail': data_json['items'][0]['volumeInfo']['imageLinks']['smallThumbnail'],
+                    'description': data_json['items'][0]['volumeInfo']['description'],
+                    'textsnippet': data_json['items'][0]['searchInfo']['textSnippet'],
+                    'author': data_json['items'][0]['volumeInfo']['authors'][0]
+                    }
+        return data
 
     return dict(book_details=book_details)
+
+
+@app.context_processor
+def review_processor():
+    def review_details(bookid):
+        book = db.execute("SELECT title, isbn FROM books WHERE id=:bookid",
+                          {"bookid": bookid}).fetchone()
+        book_data = {'title': book.title,
+                     'isbn': book.isbn
+                     }
+        return book_data
+    return dict(review_details=review_details)
 
 
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def homepage():
     username = session['user_name']
-    return render_template("Homepage.html", username=username)
+    if request.method == 'GET':
+        book = db.execute("SELECT * FROM books WHERE id IN (SELECT bookid FROM reviews WHERE rating IN (SELECT MAX(rating) FROM reviews) Order By review_date desc) ").fetchone()
+    return render_template("Homepage.html", username=username, book=book)
 
 
 @app.route("/login", methods=['GET', 'POST'])
@@ -106,6 +135,37 @@ def registration():
     return render_template('Registration.html', error=error)
 
 
+@app.route("/user", methods=['GET','POST'])
+@login_required
+def user():
+    username = session['user_name']
+    user_id = session['user_id']
+    error = ""
+    if request.method == 'POST':
+        oldpassword = request.form['oldpassword']
+        newpassword = request.form['newpassword']
+        confirm = request.form['confirm']
+        user_pass = db.execute("SELECT password FROM users WHERE id=:user_id",{"user_id": user_id}).fetchone()
+
+        if oldpassword is None or oldpassword == "" or newpassword is None or newpassword == "" or confirm is None or confirm == "":
+            print("error")
+            error = "Please fill all the fields."
+        elif user_pass[0] != oldpassword:
+            print("error")
+            error = "Incorrect Credentials."
+        elif newpassword != confirm:
+            print("error")
+            error = "New Password did not match Confirm."
+        else:
+            db.execute(
+                "UPDATE users SET password=:newpassword",{"newpassword": newpassword})
+            db.commit()
+            flash("Successfully Updated Password")
+            return redirect(url_for("homepage"))
+
+    return render_template('User.html', error=error, username=username)
+
+
 @app.route("/search", methods=['GET'])
 @login_required
 def search():
@@ -115,12 +175,12 @@ def search():
         books = db.execute("SELECT * FROM books WHERE lower(isbn) LIKE lower(:isbn) or lower(title) LIKE lower(:title)",
                            {'isbn': "%" + val + "%", 'title': "%" + val + "%"})
     else:
-        books = db.execute("SELECT * FROM public.books LIMIT 12")
+        books = db.execute("SELECT * FROM books LIMIT 12")
 
     return render_template("Search.html", username=username, books=books)
 
 
-@app.route("/reviews")
+@app.route("/reviews", methods=['GET','POST'])
 @login_required
 def reviews():
     username = session['user_name']
@@ -128,7 +188,26 @@ def reviews():
     if request.method == 'GET':
         user_reviews = db.execute("SELECT * FROM reviews WHERE userid=:userid ORDER BY review_date desc",
                                   {"userid": user_id}).fetchall()
+        review_count = db.execute("SELECT COUNT(*) FROM reviews WHERE userid=:userid",
+                                  {"userid": user_id}).fetchone()
+        review_avg = db.execute("SELECT CAST(AVG(rating) AS DECIMAL (10,2)) FROM reviews WHERE userid=:userid",
+                                  {"userid": user_id}).fetchone()
+        return render_template("Reviews.html", username=username, reviews=user_reviews, count=review_count, avg=review_avg)
+    elif request.method == 'POST':
+        book_id = request.form['delete']
+        print(
+            "DELETING REVIEW FOR BOOK ID : {}, USER_ID : {}".format(book_id, user_id))
+        db.execute(
+            "DELETE FROM reviews WHERE userid=:user_id AND bookid=:book_id",
+            {"user_id": user_id, "book_id": int(book_id)})
+        print("DELETED")
+        db.commit()
+        flash("REVIEW DELETED!")
+        user_reviews = db.execute("SELECT * FROM reviews WHERE userid=:userid ORDER BY review_date desc",
+                                  {"userid": user_id}).fetchall()
         return render_template("Reviews.html", username=username, reviews=user_reviews)
+        # return redirect(url_for('reviews'))
+
 
 
 @app.route("/books/<string:isbn>", methods=['GET', 'POST'])
@@ -154,11 +233,11 @@ def book(isbn):
             else:
                 print(
                     "INSERTING REVIEW FOR BOOK ID : {}, USER_ID : {}, RATING : {}, REVIEW : {}, REVIEW_DATE : {}".format(
-                        book_id, user_id, rating, review_text, datetime.now().date()))
+                        book_id, user_id, rating, review_text, datetime.now()))
                 db.execute(
                     "INSERT INTO reviews (userid,bookid,rating,review,review_date)VALUES(:user_id,:book_id,:rating,:review_text,:review_date)",
                     {"user_id": user_id, "book_id": book_id, "rating": rating, "review_text": review_text,
-                     "review_date": datetime.now().date()})
+                     "review_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S')})
                 print("INSERTED")
                 db.commit()
                 flash("REVIEW COMMITTED!")

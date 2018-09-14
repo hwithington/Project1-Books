@@ -2,16 +2,27 @@
 {%block body%}
 <div class="content">
     {%if reviews|count > 0%}
-
+    <div style="margin:20px;">
+        <h1><strong>Book Reviews: {{username}}</strong></h1>
+        <h4><strong>Review Count:</strong> {{count[0]}}</h4>
+        <h4><strong>Average Rating:</strong> {{avg[0]}}</h4>
+    </div>
     <div class="card-columns text-center">
         {%for review in reviews%}
             <div class="card border border-secondary" style="width: 25rem;margin: 20px;">
                     <div class="card-body">
+                        <h4 class="card-title">{{review_details(review.bookid)["title"]}}</h4>
+                        <h4 class="isbn">ISBN No: {{review_details(review.bookid)["isbn"]}}</h4>
                         <p class="card-text"><strong>REVIEW:</strong> {{review.review}}</p>
                         <p>
                             <h8><strong>Rating:</strong> {{review.rating}}</h8></br>
                             <h8><strong>Date:</strong> {{review.review_date}}</h8>
                         </p>
+                    </div>
+                    <div class="card-footer" style="justify-content:bottom;">
+                        <form method="POST">
+                            <button type="submit" name="delete" value="{{review.bookid}}" class="btn btn-primary">Delete</button>
+                        </form>
                     </div>
             </div>
         {%endfor%}

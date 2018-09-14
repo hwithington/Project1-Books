@@ -1,1 +1,6 @@
-
+#bookcard
+{
+    height: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

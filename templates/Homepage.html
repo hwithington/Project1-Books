@@ -3,7 +3,21 @@
 {%block body%}
 </br>
     {%if session['logged_in']==True%}
+    <div>
         <h3>Welcome {{username}}</h3>
+    </div>
+    <div style="padding-top: 20px;">
+        <h1><strong>New Top Rated Book</strong></h1>
+    </div>
+    <div class="card border border-secondary" style="width: 25rem;margin: 20px;">
+        <div class="card-body">
+            <h4 class="card-title">{{book.title}}</h4>
+            <h4 class="isbn">ISBN No: {{book.isbn}}</h4>
+        </div>
+        <div class="card-footer">
+            <a href="{{url_for('book',isbn=book.isbn)}}" class="btn btn-primary" style="bottom: 0;">Read More</a>
+        </div>
+    </div>
     {%else%}
         <h3>Please Login</h3>
     {%endif%}

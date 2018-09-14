@@ -1,0 +1,37 @@
+{%extends"Layout.html"%}
+
+{%block body%}
+</br>
+<div class="jumbotron jumbotron-fluid">
+    <div class="container" style="justify-content:center;">
+        <h3 class="display-4">Update Password</h3></br>
+        <div>
+            <form method="POST">
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">Old Password</label>
+                    <div class="col-md-6">
+                        <input type="password" name="oldpassword" class="form-control" placeholder="Please Enter Old Password">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">New Password</label>
+                    <div class="col-md-6">
+                        <input type="password" name="newpassword" class="form-control" placeholder="Please Enter New Password">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">Confirm New Password</label>
+                    <div class="col-md-6">
+                        <input type="password" name="confirm" class="form-control" placeholder="Please Confirm New Password">
+                    </div>
+                </div>
+                <div class="form-group row" style="justify-content: flex-end;">
+                    <div class="col-md-6">
+                        <button type="submit" class="btn btn-primary btn-lg">Update</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{%endblock%}

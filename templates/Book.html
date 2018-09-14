@@ -6,21 +6,21 @@
         <div class="jumbotron border border-secondary">
             <div class="detail_content" >
                 <div class="detail_image">
-                    <img id="{{book.isbn}}" src="{{book_details(book.isbn)['items'][0]['volumeInfo']['imageLinks']['thumbnail']}}" alt="cover not available">
+                    <img id="{{book.isbn}}" src="{{book_details(book.isbn)["thumbnail"]}}" alt="cover not available">
                 </div>
                 <br/>
                 <div class="detail_info">
-                    <h2 class="card-title"><strong>{{book.title}}</strong></h2>
-                    <h6>Subtitle: {{book_details(book.isbn)['items'][0]['volumeInfo']['subtitle']}}</h6>
-                    <h6>Author: {{book_details(book.isbn)['items'][0]['volumeInfo']['authors'][0]}}</h6>
-                    <h6 class="isbn">ISBN No: {{book.isbn}}</h6>
-                    <h5 class="rating">Good Reads Rating: {{response['books'][0]['average_rating']}} out of 5</h5>
+                    <h1 class="card-title"><strong>{{book.title}}</strong></h1>
+                    <h6><strong>Author:</strong> {{book.author}}</h6>
+                    <h6><strong>Year:</strong> {{book.year}}</h6>
+                    <h6 class="isbn"><strong>ISBN No:</strong> {{book.isbn}}</h6>
+                    <h5 class="rating"><strong>Good Reads Rating:</strong> {{response['books'][0]['average_rating']}}<strong>/</strong>5</h5>
                 </div>
             </div>
             <br/>
             <div class="detail_desc">
                 <h2>Description</h2>
-                <p class="card_text" id="{{book.id}}">{{book_details(book.isbn)['items'][0]['volumeInfo']['description']}}</p>
+                <p class="card_text" id="{{book.id}}">{{book_details(book.isbn)["description"]}}</p>
             </div>
             <br/>
             <div>
