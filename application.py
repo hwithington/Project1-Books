@@ -209,13 +209,24 @@ def admin():
             approvals = db.execute("SELECT * FROM users WHERE active_status=FALSE").fetchall()
         elif request.method == 'POST':
             approve_username = request.form.get('approval')
-            print(
-                "APPROVING USER, USER_NAME : {}".format(approve_username))
-            db.execute("UPDATE users SET active_status=TRUE WHERE username=:USER_NAME",{"USER_NAME":approve_username})
-            print("APPROVED!")
-            db.commit()
-            flash(f"{approve_username} : USER APPROVED!")
-            return redirect(url_for("admin"))
+            decline_username = request.form.get('decline')
+            if approve_username is not None:
+                print(
+                    "APPROVING USER, USER_NAME : {}".format(approve_username))
+                db.execute("UPDATE users SET active_status=TRUE WHERE username=:USER_NAME",{"USER_NAME":approve_username})
+                print("APPROVED!")
+                db.commit()
+                flash(f"{approve_username} : USER APPROVED!")
+                return redirect(url_for("admin"))
+            elif decline_username is not None:
+                print(
+                    "REMOVING USER, USER_NAME : {}".format(approve_username))
+                db.execute("DELETE FROM users WHERE username=:USER_NAME",
+                           {"USER_NAME": decline_username})
+                print("REMOVED!")
+                db.commit()
+                flash(f"{decline_username} : USER DECLINED!")
+                return redirect(url_for("admin"))
     else:
         flash("You are not an Admin")
         return redirect(url_for("homepage"))
@@ -232,7 +243,7 @@ def search():
         books = db.execute("SELECT * FROM books WHERE lower(isbn) LIKE lower(:isbn) or lower(title) LIKE lower(:title)",
                            {'isbn': "%" + val + "%", 'title': "%" + val + "%"})
     else:
-        books = db.execute("SELECT * FROM books LIMIT 12")
+        books = db.execute("SELECT * FROM books ORDER BY title ASC LIMIT 12")
 
     return render_template("Search.html", username=username, books=books)
 
@@ -304,7 +315,7 @@ def book(isbn):
 
 
 @app.route("/api/<string:isbn>")
-@login_required
+# @login_required
 def book_api(isbn):
     book_item = db.execute("SELECT * FROM books WHERE isbn=:isbn", {'isbn': isbn}).fetchone()
     book_id = book_item.id

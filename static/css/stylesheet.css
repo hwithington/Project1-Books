@@ -4,3 +4,8 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.nav-item
+{
+    padding:4px;
+}
