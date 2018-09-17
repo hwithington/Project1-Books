@@ -1,0 +1,22 @@
+{%extends"Layout.html"%}
+
+{%block body%}
+    {%if approvals|count > 0%}
+        <h1>USERS TO APPROVE</h1>
+        {%for approval in approvals%}
+            <div>
+                <h1>Username: {{approval.username}}</h1>
+                <form method="POST">
+                    <button type="submit" name="approval" value="{{approval.username}}" class="btn btn-primary">Approve</button>
+                </form>
+            </div>
+        {%endfor%}
+    {%else%}
+        <div class="content col-lg-12">
+        <br/>
+            <div class="jumbotron border border-secondary" style="padding:20px;">
+                <h1>No Users to Approve!</h1>
+            </div>
+        </div>
+    {%endif%}
+{%endblock%}

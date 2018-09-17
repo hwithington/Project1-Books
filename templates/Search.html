@@ -14,8 +14,8 @@
     <div class="card-columns text-center">
         {%for book in books%}
             <div id="bookcard" class="card border border-secondary" style="width: 25rem;min-height: 35rem;margin: 20px;">
-                <div class="card-header" style="height:15rem;justify-content:center;vertically-align:middle;">
-                    <img class="center-block" id="{{book.isbn}}" src="{{book_details(book.isbn)['smallthumbnail']}}" alt="cover not available"/>
+                <div class="card-header align-bottom" style="height:15rem;justify-content:center;">
+                    <img class="" id="{{book.isbn}}" src="{{book_details(book.isbn)['smallthumbnail']}}" alt="cover not available"/>
                 </div>
                 <div class="card-body" style="height:16rem;">
                     <h4 class="card-title">{{book.title}}</h4>

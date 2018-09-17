@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from functools import wraps
 import requests
-import json
+# import json
 from datetime import datetime
 from config import DATABASE_URL, BOOK_READ_API_KEY, BOOK_API_KEY
 
@@ -46,11 +46,36 @@ def book_processor():
                     'author': ""
                     }
         else:
-            data = {'thumbnail': data_json['items'][0]['volumeInfo']['imageLinks']['thumbnail'],
-                    'smallthumbnail': data_json['items'][0]['volumeInfo']['imageLinks']['smallThumbnail'],
-                    'description': data_json['items'][0]['volumeInfo']['description'],
-                    'textsnippet': data_json['items'][0]['searchInfo']['textSnippet'],
-                    'author': data_json['items'][0]['volumeInfo']['authors'][0]
+            if 'thumbnail' in data_json:
+                thumbnail = data_json['items'][0]['volumeInfo']['imageLinks']['thumbnail']
+            else:
+                thumbnail = "/static/images/imagenotavailable.png"
+
+            if 'smallThumbnail' in data_json:
+                smallthumbnail = data_json['items'][0]['volumeInfo']['imageLinks']['smallThumbnail']
+            else:
+                smallthumbnail = "/static/images/imagenotavailable.png"
+
+            if 'description' in data_json:
+                description = data_json['items'][0]['volumeInfo']['description']
+            else:
+                description = "Description Currently Not Available..."
+
+            if 'textSnippet' in data_json:
+                textsnippet = data_json['items'][0]['searchInfo']['textSnippet']
+            else:
+                textsnippet = "Description Currently Not Available..."
+
+            if 'authors' in data_json:
+                author = data_json['items'][0]['volumeInfo']['authors'][0]
+            else:
+                author = ""
+
+            data = {'thumbnail': thumbnail,
+                    'smallthumbnail': smallthumbnail,
+                    'description': description,
+                    'textsnippet': textsnippet,
+                    'author': author
                     }
         return data
 
@@ -97,6 +122,8 @@ def login():
             session['logged_in'] = True
             session['user_name'] = user.username
             session['user_id'] = user.id
+            if user.admin == True:
+                session['user_admin'] = True
             return redirect(url_for('homepage'))
     return render_template("Login.html", error=error)
 
@@ -105,6 +132,10 @@ def login():
 @login_required
 def logout():
     session.pop('logged_in')
+    session.pop('user_name')
+    session.pop('user_id')
+    if 'user_admin' in session:
+        session.pop('user_admin')
     flash('You are logged out')
     return redirect(url_for('login'))
 
@@ -126,7 +157,7 @@ def registration():
             error = "Password did not match!"
         else:
             db.execute(
-                "INSERT INTO users (username,password,email,regdate,active_status) VALUES(:username,:password,:email,DEFAULT,FALSE)",
+                "INSERT INTO users (username,password,email,regdate,active_status,admin) VALUES(:username,:password,:email,DEFAULT,FALSE,FALSE)",
                 {"username": username, "password": password, "email": email})
             db.commit()
             flash("Successfully Registered")
@@ -164,6 +195,32 @@ def user():
             return redirect(url_for("homepage"))
 
     return render_template('User.html', error=error, username=username)
+
+
+@app.route("/admin", methods=['GET','POST'])
+@login_required
+def admin():
+    username = session['user_name']
+    user_id = session['user_id']
+    error = ""
+    approvals = {}
+    if 'user_admin' in session:
+        if request.method == 'GET':
+            approvals = db.execute("SELECT * FROM users WHERE active_status=FALSE").fetchall()
+        elif request.method == 'POST':
+            approve_username = request.form.get('approval')
+            print(
+                "APPROVING USER, USER_NAME : {}".format(approve_username))
+            db.execute("UPDATE users SET active_status=TRUE WHERE username=:USER_NAME",{"USER_NAME":approve_username})
+            print("APPROVED!")
+            db.commit()
+            flash(f"{approve_username} : USER APPROVED!")
+            return redirect(url_for("admin"))
+    else:
+        flash("You are not an Admin")
+        return redirect(url_for("homepage"))
+
+    return render_template('Admin.html', error=error, username=username, approvals=approvals)
 
 
 @app.route("/search", methods=['GET'])
@@ -206,7 +263,6 @@ def reviews():
         user_reviews = db.execute("SELECT * FROM reviews WHERE userid=:userid ORDER BY review_date desc",
                                   {"userid": user_id}).fetchall()
         return render_template("Reviews.html", username=username, reviews=user_reviews)
-        # return redirect(url_for('reviews'))
 
 
 
@@ -252,15 +308,14 @@ def book(isbn):
 def book_api(isbn):
     book_item = db.execute("SELECT * FROM books WHERE isbn=:isbn", {'isbn': isbn}).fetchone()
     book_id = book_item.id
-    # book_json = {}
     if book:
         book_json = {"title": book_item.title, "author": book_item.author, "year": book_item.year,
                      "isbn": book_item.isbn}
         rev_count = dict(
             db.execute("SELECT COUNT(*) FROM Reviews WHERE bookid=:bookid", {"bookid": book_id}).fetchone())
         avg_score = dict(
-            db.execute("SELECT AVG(rating) FROM reviews WHERE bookid=:bookid", {"bookid": book_id}).fetchone())
-        book_json.update(review_count=rev_count['count'], average_score=avg_score['avg'])
+            db.execute("SELECT CAST(AVG(rating) AS DECIMAL (10,2)) FROM reviews WHERE bookid=:bookid", {"bookid": book_id}).fetchone())
+        book_json.update(review_count=rev_count['count'], average_score=str(avg_score['avg']))
         return jsonify(book_json)
     else:
         return render_template('404.html')
