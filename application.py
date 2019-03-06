@@ -167,7 +167,7 @@ def registration():
     return render_template('Registration.html', error=error)
 
 
-@app.route("/user", methods=['GET','POST'])
+@app.route("/user", methods=['GET', 'POST'])
 @login_required
 def user():
     username = session['user_name']
@@ -177,7 +177,7 @@ def user():
         oldpassword = request.form['oldpassword']
         newpassword = request.form['newpassword']
         confirm = request.form['confirm']
-        user_pass = db.execute("SELECT password FROM users WHERE id=:user_id",{"user_id": user_id}).fetchone()
+        user_pass = db.execute("SELECT password FROM users WHERE id=:user_id", {"user_id": user_id}).fetchone()
 
         if oldpassword is None or oldpassword == "" or newpassword is None or newpassword == "" or confirm is None or confirm == "":
             print("error")
@@ -190,7 +190,7 @@ def user():
             error = "New Password did not match Confirm."
         else:
             db.execute(
-                "UPDATE users SET password=:newpassword",{"newpassword": newpassword})
+                "UPDATE users SET password=:newpassword", {"newpassword": newpassword})
             db.commit()
             flash("Successfully Updated Password")
             return redirect(url_for("homepage"))
@@ -198,7 +198,7 @@ def user():
     return render_template('User.html', error=error, username=username)
 
 
-@app.route("/admin", methods=['GET','POST'])
+@app.route("/admin", methods=['GET', 'POST'])
 @login_required
 def admin():
     username = session['user_name']
@@ -214,7 +214,7 @@ def admin():
             if approve_username is not None:
                 print(
                     "APPROVING USER, USER_NAME : {}".format(approve_username))
-                db.execute("UPDATE users SET active_status=TRUE WHERE username=:USER_NAME",{"USER_NAME":approve_username})
+                db.execute("UPDATE users SET active_status=TRUE WHERE username=:USER_NAME", {"USER_NAME":approve_username})
                 print("APPROVED!")
                 db.commit()
                 flash(f"{approve_username} : USER APPROVED!")
@@ -249,7 +249,7 @@ def search():
     return render_template("Search.html", username=username, books=books)
 
 
-@app.route("/reviews", methods=['GET','POST'])
+@app.route("/reviews", methods=['GET', 'POST'])
 @login_required
 def reviews():
     username = session['user_name']
@@ -275,7 +275,6 @@ def reviews():
         user_reviews = db.execute("SELECT * FROM reviews WHERE userid=:userid ORDER BY review_date desc",
                                   {"userid": user_id}).fetchall()
         return render_template("Reviews.html", username=username, reviews=user_reviews)
-
 
 
 @app.route("/books/<string:isbn>", methods=['GET', 'POST'])
