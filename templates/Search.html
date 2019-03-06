@@ -20,7 +20,7 @@
                 <div class="card-body" style="height:16rem;">
                     <h4 class="card-title">{{book.title}}</h4>
                     <h4 class="isbn">ISBN No: {{book.isbn}}</h4>
-                    <p class="card-text" id="{{book.id}}">{{book_details(book.isbn)["textsnippet"]}}</p>
+                    <p class="card-text" id="{{book.id}}">{{book_details(book.isbn)["textsnippet"]|safe}}</p>
 
                 </div>
                 <div class="card-footer">

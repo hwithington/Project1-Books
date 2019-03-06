@@ -20,7 +20,7 @@
             <br/>
             <div class="detail_desc">
                 <h2>Description</h2>
-                <p class="card_text" id="{{book.id}}">{{book_details(book.isbn)["description"]}}</p>
+                <p class="card_text" id="{{book.id}}">{{book_details(book.isbn)["description"]|safe}}</p>
             </div>
             <br/>
             <div>

@@ -99,7 +99,8 @@ def review_processor():
 def homepage():
     username = session['user_name']
     if request.method == 'GET':
-        book = db.execute("SELECT * FROM books WHERE id IN (SELECT bookid FROM reviews WHERE rating IN (SELECT MAX(rating) FROM reviews) Order By review_date desc) ").fetchone()
+        book = db.execute("SELECT * FROM books WHERE id IN (SELECT bookid FROM reviews WHERE rating IN (SELECT MAX(rating) FROM reviews) Order By review_date desc)").fetchone()
+
     return render_template("Homepage.html", username=username, book=book)
 
 
@@ -240,11 +241,11 @@ def search():
     username = session['user_name']
     val = request.args.get('search')
     if val:
-        books = db.execute("SELECT * FROM books WHERE lower(isbn) LIKE lower(:isbn) or lower(title) LIKE lower(:title)",
-                           {'isbn': "%" + val + "%", 'title': "%" + val + "%"})
+        books = db.execute("SELECT * FROM books WHERE lower(isbn) LIKE lower(:isbn) or lower(title) LIKE lower(:title) or lower(author) LIKE lower(:author)",
+                           {'isbn': "%" + val + "%", 'title': "%" + val + "%", 'author': "%" + val + "%"})
     else:
-        books = db.execute("SELECT * FROM books ORDER BY title ASC LIMIT 12")
-
+        flash("Search by Title, Isbn or Author to get a list of books")
+        books = []
     return render_template("Search.html", username=username, books=books)
 
 

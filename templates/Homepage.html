@@ -1,7 +1,7 @@
 {%extends"Layout.html"%}
 
 {%block body%}
-</br>
+<br/>
     {%if session['logged_in']==True%}
     <div>
         <h3>Welcome {{username}}</h3>
@@ -18,7 +18,7 @@
                 <div class="card-block px-2">
                     <h4 class="card-title"><strong>{{book.title}}</strong></h4>
                     <h4 class="isbn"><strong>ISBN No:</strong> {{book.isbn}}</h4>
-                    <p><strong>Description:</strong> {{book_details(book.isbn)['textsnippet']}}</p>
+                    <p><strong>Description:</strong> {{book_details(book.isbn)['textsnippet']|safe}}</p>
                 </div>
             </div>
         </div>
